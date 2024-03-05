@@ -1,7 +1,7 @@
 services:
 
   app01: &app
-    image: phpswoole/swoole:5.0-dev
+    image: phpswoole/swoole:5.0
     hostname: app01
     ports:
       - 9595:9501

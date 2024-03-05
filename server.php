@@ -1,11 +1,20 @@
 #!/usr/bin/env php
 <?php
 
-$http = new Swoole\Http\Server('0.0.0.0', 9501);
+declare(strict_types=1);
 
-$http->on('Request', function ($request, $response) {
-    $response->header('Content-Type', 'text/html; charset=utf-8');
-    $response->end('<h1>Hello Swoole Teste. #' . rand(1000, 9999) . '</h1>');
+use Swoole\Coroutine;
+use function Swoole\Coroutine\run;
+
+run(function () {
+	$i = 0;
+	while (true) {
+		Coroutine::sleep(1);
+		echo 'Print out this message every teste milliseconds.', PHP_EOL;
+		if (++$i === 5) {
+			echo 'Stop printing out messages at the 500th millisecond.', PHP_EOL;
+			break;
+		}
+	}
+	echo 'No more messages should be printed out after the 500th millisecond.', PHP_EOL;
 });
-
-$http->start();
