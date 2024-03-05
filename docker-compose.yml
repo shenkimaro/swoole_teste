@@ -1,0 +1,11 @@
+services:
+
+  app01: &app
+    image: phpswoole/swoole:5.0-dev
+    hostname: app01
+    ports:
+      - 9595:9501
+    volumes:
+      - type: bind
+        source: .
+        target: /var/www/
