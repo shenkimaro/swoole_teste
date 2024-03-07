@@ -1,13 +1,20 @@
-#!/usr/bin/env php
+
 <?php
 
-$http = new Swoole\Http\Server('0.0.0.0', 9501);
+$http = new Swoole\Http\Server('0.0.0.0', 9999);
+include '../library/autoload.php';
+include './load.php';
 
-$http->on('request', function ($request, $response) {
-    $response->header('Content-Type', 'text/html; charset=utf-8');
-    $response->end('<h1>Hello Swoole Teste. #' . rand(1000, 9999) . '</h1>');
+$http->on('start', function ($server) {
+	Util::shellDebug([
+		'IP' => $server->host, 
+		'Port' => $server->port
+		],false);
+    echo "Servidor Iniciado \n";
 });
 
-$http->on($event_name, $callback);
+$http->on('request', function ($request, $response) {
+   processaURL($request);
+});
 
 $http->start();
