@@ -2,7 +2,7 @@
 <?php
 
 $http = new Swoole\Http\Server('0.0.0.0', 9999);
-include '../library/autoload.php';
+include './protector/autoload.php';
 include './load.php';
 
 $http->on('start', function ($server) {
@@ -14,7 +14,7 @@ $http->on('start', function ($server) {
 });
 
 $http->on('request', function ($request, $response) {
-   processaURL($request);
+   processaURL($request, $response);
 });
 
 $http->start();

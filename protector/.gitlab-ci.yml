@@ -1,0 +1,60 @@
+stages:
+  - deploy-prod
+  - deploy-homolog
+
+variables:
+  SSH_CONFIG_EXPRESSO: Host *\n\tStrictHostKeyChecking no\n
+  SSH_CONFIG_MORPHEUS: Host *\n\tStrictHostKeyChecking no\n\tPort 5721\n
+  SYNC_OPTIONS_EXPRESSO: "-p -avog --chown=${REMOTE_APACHE_USER}. --delete-excluded --rsh=ssh --progress --exclude-from=excluded-from-sync --exclude=excluded-from-sync "
+  SYNC_OPTIONS_MORPHEUS: "-p -avog --chown=${REMOTE_APACHE_USER_CENTOS}. --delete-excluded --rsh=ssh --progress --exclude-from=excluded-from-sync --exclude=excluded-from-sync "
+  REMOTE_PATH_EXPRESSO: "/var/www/adms/library/"
+  REMOTE_PATH_MORPHEUS: "/var/library/"
+  COMMAND_EXPRESSO: "rsync --rsync-path='sudo rsync' ${SYNC_OPTIONS_EXPRESSO} . ${PRODUCTION_SSH_USER_AT_HOST}:${REMOTE_PATH_EXPRESSO}"
+  COMMAND_MORPHEUS: "rsync --rsync-path='sudo rsync' ${SYNC_OPTIONS_MORPHEUS} . ${PRODUCTION_SSH_USER_AT_MORPHEUS}:${REMOTE_PATH_MORPHEUS}"
+  HLG_COMMAND: "rsync --rsync-path='sudo rsync' ${SYNC_OPTIONS_EXPRESSO} . ${HOMOLOGATION_SSH_USER_AT_HOST}:${REMOTE_PATH_EXPRESSO}"
+
+Deploying_On_Expresso_Production:
+  tags:
+    - rsync
+  stage: deploy-prod
+  only: ["master"]
+  script:
+    - rsync --version
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -e $SSH_CONFIG_EXPRESSO > ~/.ssh/config
+    - echo "${SSH_PRIVATE_KEY_PRODUCTION}" > ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+    - echo $COMMAND_EXPRESSO
+    - eval $COMMAND_EXPRESSO
+
+Deploying_On_Morpheus_Production:
+  tags:
+    - rsync
+  stage: deploy-prod
+  only: ["master"]
+  script:
+    - rsync --version
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -e $SSH_CONFIG_MORPHEUS > ~/.ssh/config
+    - echo "${SSH_PRIVATE_KEY_PRODUCTION}" > ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+    - echo $COMMAND_MORPHEUS
+    - eval $COMMAND_MORPHEUS
+
+Deploying_On_Homologation:
+  tags:
+    - rsync
+  stage: deploy-homolog
+  only: [ "develop" ]
+  script:
+    - rsync --version
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -e $SSH_CONFIG_EXPRESSO > ~/.ssh/config
+    - echo "${SSH_PRIVATE_KEY_HOMOLOGATION}" > ~/.ssh/id_ed25519
+    - echo $(ssh-keyscan $DEPLOY_HOMOLOGATION_HOST) >> ~/.ssh/known_hosts
+    - chmod 600 ~/.ssh/id_ed25519
+    - echo $HLG_COMMAND
+    - eval $HLG_COMMAND

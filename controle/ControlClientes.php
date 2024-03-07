@@ -6,11 +6,10 @@ class ControlClientes extends Controller {
 
     private $rest;
 
-    public function __construct() {
-        parent::__construct();
-        ClientesTDG::idValido(Request::getInt('id',0));
-        $this->rest = new Restful();
-    }
+    public function __construct(Swoole\Http\Request $request, Swoole\Http\Response $response) {
+		parent::__construct($request, $response);
+		ClientesTDG::idValido(Request::getInt('id', 0));
+	}
 
     public function index() {
         $this->rest->printREST(['mensagem'=>'endpoint não encontrado'], Restful::STATUS_BAD_REQUEST);
