@@ -18,7 +18,8 @@ class ControlClientes extends Controller {
 
     public function transacoes() {
         try {
-			$json = file_get_contents('php://input');
+			$json = $this->request->rawcontent();
+			
 			$request = json_decode($json);
             $valor = (int) $request->valor;
 			$tipo = strtolower($request->tipo);
@@ -29,7 +30,7 @@ class ControlClientes extends Controller {
             if (strlen($descricao) <= 0 || strlen($descricao) > 10) {
 				throw new Exception('Descrição é inválido');
             }
-			$idCliente = Request::getInt('id',0);
+			$idCliente = RequestParamns::getInt('id',0);
             $cliente = ClientesTDG::change(new Clientes(['saldo'=>$valor, 'id'=>$idCliente]), $tipo,$descricao);
             $this->rest->printREST([
                 "limite" => $cliente->getLimite(),

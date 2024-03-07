@@ -1,11 +1,46 @@
+
+version: '3.1'
+
+networks:
+  rede_app:    
+    driver: bridge
+
 services:
 
-  app01: &app
-    image: phpswoole/swoole:5.0
-    hostname: app01
+#  app01: &app
+#    image: phpswoole/swoole:5.0
+#    hostname: app01
+#    ports:
+#      - 9595:9501
+#    volumes:
+#      - type: bind
+#        source: .
+#        target: /var/www/
+
+#  app02:
+#    <<: *app
+#    hostname: app02     
+
+  db:
+    image: postgres
+    restart: always
+    hostname: db
+    networks:
+      rede_app:
+        aliases:
+          - db
+    environment:
+      POSTGRES_PASSWORD: teste
     ports:
-      - 9595:9501
-    volumes:
-      - type: bind
-        source: .
-        target: /var/www/
+      - 5432:5432  
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "160MB"  
+    volumes: 
+      - rinha:/var/lib/postgresql/datas
+      - ./container/script.sql:/docker-entrypoint-initdb.d/init.sql
+    command: postgres -c checkpoint_timeout=600 -c max_wal_size=4096 -c synchronous_commit=0 -c full_page_writes=0 
+volumes:
+  rinha:

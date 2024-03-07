@@ -4,14 +4,14 @@
  * @package Library
  *
  * @subpackage DAO
- * 
+ *
  * @filesource
  */
 
 /**
- * Esta classe cria uma camada que mascara os metodos de acesso ao 
+ * Esta classe cria uma camada que mascara os metodos de acesso ao
  * banco de dados
- * 
+ *
  * @package Library
  *
  * @author Ibanez C. Almeida <ibanez.almeida@gmail.com>
@@ -19,67 +19,67 @@
  * @version 2.0
  *
  */
-class Db {
+class DbPg {
 
 	/**
 	 * Resultado da conexao com banco de dados
-	 * 
+	 *
 	 * @var resource
 	 */
 	private $con;
 
 	/**
 	 * Host para conexao com banco de dados
-	 * 
+	 *
 	 * @var string
 	 */
 	private $host = "";
 
 	/**
 	 * Login para conexao com banco de dados
-	 * 
+	 *
 	 * @var string
 	 */
 	private $login = "";
 
 	/**
 	 * Senha para conexao com banco de dados
-	 * 
+	 *
 	 * @var string
 	 */
 	private $senha = "";
 
 	/**
 	 * Banco de dados a ser selecionadao
-	 * 
+	 *
 	 * @var string
 	 */
 	private $db = "";
 
 	/**
 	 * Porta de conexao com banco de dados
-	 * 
+	 *
 	 * @var string
 	 */
 	private $port;
 
 	/**
 	 * Erro de execucao de comando sql
-	 * 
+	 *
 	 * @var string
 	 */
 	private $error;
 
 	/**
 	 * Objeto Debug
-	 * 
+	 *
 	 * @var Debug
 	 */
 	private $debug;
 
 	/**
 	 * Objeto Email
-	 * 
+	 *
 	 * @var Email
 	 */
 	private $email;
@@ -91,7 +91,15 @@ class Db {
 	 */
 	public static $instance;
 
+	/**
+	 * usada para contagem no metodo prepareQuery
+	 * @var int
+	 */
+	private $count;
+	private $startTimeConnection;
+
 	//************************************************************************************************************************\\
+
 	/**
 	 * Metodo construtor de Db
 	 *
@@ -108,16 +116,17 @@ class Db {
 		$this->host = $host;
 		$this->login = $login;
 		$this->senha = $senha;
-		$this->port = $port;
+		$this->port = $port == '' ? '5432' : $port;
 		$this->db = $bd;
-//		$this->email=Email::getInstance();	
-//		$this->debug=new Debug();
-		$this->conect();
+		$this->startTimeConnection = Debug::getStartExecutionTime();
 	}
-	
+
 	public function __destruct() {
-		if ($this->con) {
-			pg_close($this->con);
+		if ($this->con && is_resource($this->con)) {
+			if (!pg_close($this->con)) {
+				Debug::tail('Nao foi possivel fechar a conexao.');
+			}
+
 			if (defined("_SYSNAME") && _SYSNAME == 'cms_template') {
 				$tempoDecorrido = Debug::getElapsedExecutionTime($this->startTimeConnection);
 				if ($tempoDecorrido >= 10) {
@@ -127,7 +136,13 @@ class Db {
 		}
 	}
 
+	private function getCon() {
+		$this->connect();
+		return $this->con;
+	}
+
 	//************************************************************************************************************************\\
+
 	/**
 	 * Retorna uma unica instancia da classe
 	 *
@@ -135,23 +150,24 @@ class Db {
 	 */
 	public static function getInstance($host, $bd, $login, $senha, $port = "5432") {
 		if (!isset(self::$instance)) {
-			self::$instance = new Db($host, $bd, $login, $senha, $port = "5432");
+			self::$instance = new DbPg($host, $bd, $login, $senha, $port);
 		}
 		return self::$instance;
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Escreve os dados da conexao com o banco de dados
 	 *
-	 * @param integer $tipo Indica o que deve ser retornado, 
+	 * @param integer $tipo Indica o que deve ser retornado,
 	 * atualmente existe somente uma opcao a padrao "1"
 	 *
 	 * @param integer $senha Indica se existe uma senha que possa ser
 	 * retornada
 	 *
 	 */
-	function writeConnection($senha = 0) {
+	function writeConnection($tipo = 1, $senha = 0) {
 		echo "<pre>";
 		echo "Host........: " . $this->host . "\n";
 		echo "Login.......: " . $this->login . "\n";
@@ -163,23 +179,36 @@ class Db {
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Realiza a conexao com o banco de dados
 	 */
-	private function conect() {
+	private function connect() {
 		if ($this->host == "") {
 			throw new Exception("Host para conexão não informado");
 		}
-		$port = (isset($this->port) && $this->port != null) ? $this->port : '5432';
-		$this->con = @pg_connect("host=$this->host dbname=$this->db user=$this->login password=$this->senha port=$port");
-		if (!$this->con) {
-                    if($this->con == null || $this->con instanceof PgSql\Connection)
+		if ($this->con) {
+			return;
+		}
+
+		$mensagem_erro = "Não foi possível fazer a conexão com o banco de dados";
+		$connectParans = "host=$this->host dbname=$this->db user=$this->login password=$this->senha port=$this->port connect_timeout=1";
+
+		$this->con = @pg_connect($connectParans);
+
+		if ($this->con) {
 			$this->error = @pg_last_error($this->con);
-                    throw new Exception("Não foi possível fazer a conexão com o banco de dados: " . $this->error);
+			if ($this->error) {
+				throw new ConectionDBException($mensagem_erro . $this->error);
+			}
+		} else {
+			$complementoMsg = " host: " . $this->host . '. Banco de dados: ' . $this->db . '. user: ' . $this->login;
+			throw new ConectionDBException($mensagem_erro . $complementoMsg);
 		}
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Executa a sql
 	 *
@@ -188,17 +217,24 @@ class Db {
 	 *
 	 * @param integer $stop Indica se a query vai parar a execucao em
 	 * caso de erro "1", ou vai retorna-lo "0"
-	 * @return resouce 
 	 */
 	public function query($sql = '') {
+		if (pg_connection_busy($this->getCon())) {
+			return false;
+		}
 		/**
 		 * validacao de ausencia de escape
 		 */
-		if((substr_count($sql, "'")%2) != 0){
+		if ((substr_count($sql, "'") % 2) != 0) {
 			throw new Exception("0x4C6962: Erro de sintaxe na linguagem de consulta estruturada.");
 		}
-		$var = @pg_query($this->con, $sql);
-		$this->error = pg_last_error($this->con);
+		pg_send_query($this->getCon(), $sql);
+		$var = pg_get_result($this->getCon());
+		while (pg_get_result($this->getCon()));
+		if ($var !== FALSE) {
+			$this->error = pg_result_error($var);
+			$this->error = $this->error ?: pg_last_error($this->getCon());
+		}
 		if ($this->error) {
 			throw new Exception($this->error);
 		}
@@ -206,32 +242,35 @@ class Db {
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Apelido para query
 	 *
 	 * @param string $sql Deve conter a sql a ser executada pelo
 	 * banco de dados
 	 * @see query
-	 * 
+	 *
 	 */
 	public function execute($sql = '') {
 		return $this->query($sql);
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Apelido para query
 	 *
 	 * @param string $sql Deve conter a sql a ser executada pelo
 	 * banco de dados
 	 * @see query
-	 * 
+	 *
 	 */
 	public function exec($sql) {
 		return $this->query($sql);
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Indeficar o numero de linhas no resultado do SQL
 	 *
@@ -242,23 +281,25 @@ class Db {
 	 */
 	public function num_rows($consulta) {
 		$var = @pg_num_rows($consulta);
-		$this->error = pg_last_error($this->con);
+		$this->error = pg_last_error($this->getCon());
 		return $var;
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Apelido para num_rows
 	 *
 	 * @param resource $consulta Resultado retornado por query,exec ou execute
 	 * @see num_rows
-	 * 
+	 *
 	 */
 	public function numRows($consulta) {
 		return $this->num_rows($consulta);
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Encontrar o ultimo OID
 	 *
@@ -269,11 +310,12 @@ class Db {
 	 */
 	public function last_oid($result) {
 		$var = pg_last_oid($result);
-		$this->error = pg_last_error($this->con);
+		$this->error = pg_last_error($this->getCon());
 		return $var;
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Apelido para last_oid
 	 *
@@ -288,11 +330,12 @@ class Db {
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Encontrar o ultimo registro inserido
 	 *
 	 * @param string $table Nome da tabela a ser pesquisada
-	 * 
+	 *
 	 * @param resource $exec  Resultado retornado por query,exec ou execute
 	 *
 	 * @return resouce Registo inserido no banco de dados
@@ -303,11 +346,12 @@ class Db {
 				FROM $table
 				WHERE oid=" . $this->last_oid($exec);
 		$var = $this->query($sql);
-		$this->error = pg_last_error($this->con);
+		$this->error = pg_last_error($this->getCon());
 		return $this->query($sql);
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Encontrar valor de um campo em uma linha especifica do resultado
 	 *
@@ -325,8 +369,9 @@ class Db {
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
-	 * Retorna um array associativa com os nomes os campos ou com 
+	 * Retorna um array associativa com os nomes os campos ou com
 	 * numeros de uma consulta
 	 *
 	 * @param resource $consulta Resultado retornado por query,exec ou execute
@@ -340,6 +385,7 @@ class Db {
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Encontrar o numero de campos da consulta
 	 *
@@ -353,6 +399,7 @@ class Db {
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Apelido para num_fields
 	 *
@@ -367,11 +414,12 @@ class Db {
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Apelido para fetch_all
 	 *
 	 * @param resource $exec Resultado retornado por query,exec ou execute
-	 * 
+	 *
 	 * @return array
 	 * @see fetch_all
 	 */
@@ -380,11 +428,12 @@ class Db {
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Retorna todas as linhas (registros) como um array
 	 *
 	 * @param resource $exec Resultado retornado por query,exec ou execute
-	 * 
+	 *
 	 * @return array
 	 */
 	public function fetch_all($exec) {
@@ -395,23 +444,28 @@ class Db {
 	}
 
 	//************************************************************************************************************************\\
-	/**
-	 * Apelido para nextVal	  
-	 *
-	 * @param string $sequencia Nome da sequencia no banco
-	 * @return integer
-	 *  @see nextVal
-	 */
-	public function getSequencia($sequencia) {
-		return $this->nextVal($sequencia);
-	}
 
-	//************************************************************************************************************************\\
 	/**
 	 * Obtem o proximo valor da sequencia informada
 	 *
 	 * @param string $sequencia Nome da sequencia no banco
 	 * @return integer
+	 */
+	public function getSequencia($sequencia) {
+		$sql = "SELECT nextval('$sequencia') as proximo;";
+		$ex = $this->execute($sql);
+		$res = $this->fetchAll($ex);
+		return $res[0]['proximo'];
+	}
+
+	//************************************************************************************************************************\\
+
+	/**
+	 * Apelido para getSequencia
+	 *
+	 * @param string $sequencia Nome da sequencia no banco
+	 * @return integer
+	 * @see getSequencia
 	 */
 	public function nextVal($sequencia) {
 		$sql = "SELECT nextval('$sequencia') as proximo;";
@@ -421,7 +475,9 @@ class Db {
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
+	 * Apelido para getSequencia
 	 *
 	 * @param string $sequencia Nome da sequencia no banco
 	 * @return integer
@@ -438,59 +494,64 @@ class Db {
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Inicia o processo de transação
 	 *
 	 * @return boolean
-	 * 
+	 *
 	 */
 	public function beginTransaction() {
 		$sql = "begin;";
 		$var = $this->execute($sql);
-		$this->error = pg_last_error($this->con);
+		$this->error = pg_last_error($this->getCon());
 		return true;
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Desfaz a transação
 	 *
 	 * @return boolean
-	 * 
+	 *
 	 */
 	public function rollback() {
 		$sql = "rollback;";
 		$var = $this->execute($sql);
-		$this->error = pg_last_error($this->con);
+		$this->error = pg_last_error($this->getCon());
 		return true;
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Finaliza a transacao gravando os dados
 	 *
 	 * @return boolean
-	 * 
+	 *
 	 */
 	public function commit() {
 		$sql = "commit;";
 		$var = $this->execute($sql);
-		$this->error = pg_last_error($this->con);
+		$this->error = pg_last_error($this->getCon());
 		return true;
 	}
 
 	//************************************************************************************************************************\\
+
 	/**
 	 * Pega o erro da instrucao sql no banco
 	 *
 	 * @return string
-	 * 
+	 *
 	 */
 	public function getError() {
 		return $this->error;
 	}
 
-	// ********************************************************************************************************************************		
+	// ********************************************************************************************************************************
+
 	/**
 	 * Verifica se se o campo de uma tabela é chave estrangeira em outra e retorna o nome da 1 ª tabela que tem aquele campo com valor, ou seja chave estrangeira em uso
 	 *
@@ -532,9 +593,25 @@ class Db {
 	}
 
 	public function escape($var) {
-		return pg_escape_string($this->con, $var);
+		return pg_escape_string($this->getCon(), $var);
 	}
 
+	/**
+	 * 
+	 * @param string $sql
+	 * @param array $params
+	 * @return array
+	 */
+	public function preparedQuery($sql, $params = array()) {
+		$callBack = function ($match) {
+			return '$' . $this->count++;
+		};
+		$this->count = 1;
+		$sql = preg_replace_callback('/\?/', $callBack, $sql);
+		$ex = pg_query_params($this->getCon(), $sql, $params);
+		if (!$ex) {
+			throw new Exception(pg_errormessage($this->getCon()));
+		}
+		return $this->fetchAll($ex);
+	}
 }
-
-?>

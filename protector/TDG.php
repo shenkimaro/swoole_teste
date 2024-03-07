@@ -132,13 +132,7 @@ class TDG {
 		$conf = $GLOBALS['configDb'];
 		$conf['_sgbd'] = $conf['sgbd'] ?? 'DbPg';
 		$paramConnection = (!empty($array)) ? $array : $conf;
-		if (Util::isLocalIp() || Util::isBeta()) {
-			return self::getDbDev($paramConnection);
-		}
-		if (self::isProductionConnection()) {
-			return self::getDbProduction($paramConnection);
-		}
-		throw new Exception("O aplicativo não está configurado para rodar no {$_SERVER['HTTP_HOST']} ou {$_SERVER['SERVER_ADDR']}");
+		return self::getDbDev($paramConnection);
 	}
 
 	private static function isProductionConnection() {
@@ -650,7 +644,7 @@ class TDG {
 				if (trim($pkName) == trim(($field)))
 					continue;
 			}
-            $propertyName = $dto->getPropertyByMethodName($methodName);
+			$propertyName = $dto->getPropertyByMethodName($methodName);
 			$value = $dto->getPropertyValue($propertyName);
 			if ($value === null || trim($value) === '') {
 				continue;
@@ -951,22 +945,22 @@ class TDG {
 		return $order;
 	}
 
-    public function order($array = array(), $default_order = '') {
-        if (count($array) == 0) {
-            $array = $_REQUEST;
-        }
-        $order = "";
-        if (isset($array['_by']) && trim($array['_by']) != '')
-            $order = " ORDER BY " . trim($this->db->escape($array['_by']));
+	public function order($array = array(), $default_order = '') {
+		if (count($array) == 0) {
+			$array = $_REQUEST;
+		}
+		$order = "";
+		if (isset($array['_by']) && trim($array['_by']) != '')
+			$order = " ORDER BY " . trim($this->db->escape($array['_by']));
 
-        if (isset($array['_order']) && (strtoupper(trim($array['_order'])) == 'ASC' || strtoupper(trim($array['_order'])) == 'DESC') && isset($array['_by']) && trim($array['_by']) != '')
-            $order .= " " . trim($this->db->escape($array['_order']));
+		if (isset($array['_order']) && (strtoupper(trim($array['_order'])) == 'ASC' || strtoupper(trim($array['_order'])) == 'DESC') && isset($array['_by']) && trim($array['_by']) != '')
+			$order .= " " . trim($this->db->escape($array['_order']));
 
-        if (!$order && $default_order)
-            $order = " ORDER BY " . $default_order;
+		if (!$order && $default_order)
+			$order = " ORDER BY " . $default_order;
 
-        return $order;
-    }
+		return $order;
+	}
 
 	public function getSql() {
 		return $this->sql;
@@ -1130,5 +1124,4 @@ class TDG {
 	public function commit() {
 		$this->db->commit();
 	}
-
 }
