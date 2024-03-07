@@ -1098,14 +1098,6 @@ class TDG {
 		return $sql;
 	}
 
-	/**
-	 * Metodo que retorna a instancia da View que sera utilizada pela paginacao
-	 * @return View
-	 */
-	protected function getInstanceView() {
-		return View::getInstance();
-	}
-
 	//************************************************************************************************************************\\
 
 	/**

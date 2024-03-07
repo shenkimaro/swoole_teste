@@ -2,7 +2,7 @@
 <?php
 
 $http = new Swoole\Http\Server('0.0.0.0', 9999);
-include './protector/autoload.php';
+include './config/requires.php';
 include './load.php';
 
 $http->on('start', function ($server) {

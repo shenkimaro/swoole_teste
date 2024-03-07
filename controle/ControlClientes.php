@@ -1,14 +1,15 @@
 <?php
 
+use Swoole\Http\Request;
+use Swoole\Http\Response;
+
 class ControlClientes extends Controller {
 
     const MODULO = 'inicio';
 
-    private $rest;
-
-    public function __construct(Swoole\Http\Request $request, Swoole\Http\Response $response) {
+    public function __construct(Request $request, Response $response) {
 		parent::__construct($request, $response);
-		ClientesTDG::idValido(Request::getInt('id', 0));
+		ClientesTDG::idValido(RequestParamns::getInt('id', 0));
 	}
 
     public function index() {
@@ -42,7 +43,7 @@ class ControlClientes extends Controller {
 	
 	public function extrato() {
         try {
-			$movimentacao = MovimentacaoTDG::getExtrato(Request::getInt('id', 0));
+			$movimentacao = MovimentacaoTDG::getExtrato(RequestParamns::getInt('id', 0));
 			$data = [];
 			foreach ($movimentacao as $registro) {
 				if(empty($registro['tipo'])){

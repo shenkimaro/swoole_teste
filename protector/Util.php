@@ -340,30 +340,6 @@ class Util {
 	//************************************************************************************************************************\\
 
 	/**
-	 * Redireciona a resquisicao para outro arquivo/modulo/camada.
-	 * O parametro $compl_url deve ser informado caso seja necessario customizar a url.
-	 * Ex. Util::redirReq("modulo", "acao", array("variavel_na_url1" => $valor1, "variavel_na_url2" => $valor2), "arquivo.php5")
-	 * redicionaria para ?modulo=modulo&acao=acao&variavel_na_url1=valor1&variavel_na_url2=valor2
-	 *
-	 * @param string $modulo
-	 * @param string $acao
-	 * @param array $compl_url
-	 *
-	 */
-	public static function redirReq($modulo = "", $acao = "", $compl_url = array()) {
-		$control = Controller::getControlByRequest($modulo);
-		if ($control != null && $acao == '') {
-			if (method_exists($control, 'index')) {
-				$acao = 'index';
-			}
-		}
-		$url = self::montaURL($modulo, $acao, $compl_url);
-		self::redirecionar($url);
-	}
-
-	//************************************************************************************************************************\\
-
-	/**
 	 * Monta a url de acordo com os parametros passados
 	 * O parametro $compl_url deve ser informado caso seja necessario customizar a url.
 	 * Ex. Util::montaURL("modulo", "acao", array("variavel_na_url1" => $valor1, "variavel_na_url2" => $valor2), "arquivo.php5")
@@ -648,34 +624,6 @@ class Util {
 	public static function redirecionarReferer($url_default) {
 		$url = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : $url_default;
 		self::redirecionar($url);
-	}
-
-	//************************************************************************************************************************\\
-
-	/**
-	 * Aceita uma url para realizar Location
-	 *
-	 * @param $url
-	 * @param bool $request, se true mantem request
-	 */
-	public static function redirecionar($url, $request = true) {
-		if (isset($GLOBALS['files']) && isset($GLOBALS['files']['rootSys'])) {
-			$rootSys = $GLOBALS['files']['rootSys'];
-			$rootSys = str_replace("/", "", $rootSys);
-			if (!isset($_SESSION[$rootSys]['redirect'])) {
-				$_SESSION[$rootSys]['redirect'] = 0;
-			}
-			$_SESSION[$rootSys]['redirect'] = $_SESSION[$rootSys]['redirect'] + 1;
-		}
-		if (defined('_SYSNAME') && $request) {
-			$_SESSION[_SYSNAME]['request'] = $_REQUEST;
-		}
-		if (defined('_SYSNAME')) {
-			$view = View::getInstance();
-			$_SESSION[_SYSNAME]['view'] = serialize($view);
-		}
-		header("Location: $url");
-		die;
 	}
 
 	//************************************************************************************************************************\\

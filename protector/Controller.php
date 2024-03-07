@@ -106,23 +106,11 @@ class Controller {
 		if (isset($GLOBALS['template']['templateDefault'])) {
 			$this->setIndex($GLOBALS['template']['templateDefault']);
 		}
-		if (!isset($this->view)) {
-			$this->view = View::getInstance();
-		}
 
 		$this->limitLines = 30;
 		$this->request = $request;
 		$this->response = $response;
 		$this->rest = new Restful($request, $response);
-
-		$page = RequestParamns::getInt('page', 1);
-		$this->offsetAtual = $page * $this->limitLines;
-		$this->view->setPage($page, "block");
-		if (defined('_TEMPLATE_PAGINATION_MAX_ROWS')) {
-			$this->view->setRowsLimit(_TEMPLATE_PAGINATION_MAX_ROWS);
-		} else {
-			$this->view->setRowsLimit(50);
-		}
 	}
 
 	//************************************************************************************************************************\\
@@ -230,20 +218,6 @@ class Controller {
 	}
 
 	/**
-	 * Chama o template padrao para ser exibido
-	 *
-	 * @param array $var Nome do template padrao
-	 *
-	 * @author Ibanez C Almeida
-	 */
-	protected function indexTemplate($var = '') {
-        if (trim($this->templateIndex) == '') {
-			$this->templateIndex = defined('_templateIndex') ? _templateIndex : '';
-		}
-        $this->view->mergeTemplateIndex(trim($var) != '' ? $var : $this->templateIndex);
-	}
-
-	/**
 	 * Atribui apelido para op e module
 	 *
 	 * @param array $var Ex.:$var['op']='action'
@@ -282,7 +256,6 @@ class Controller {
 			if (method_exists($obj, $actions[$op])) {
 				$func = $actions[$op];
 				$this->$func();
-				$this->view->mergeTemplate($op);
 			} else {
 				$this->indexTemplate();
 			}
@@ -295,21 +268,15 @@ class Controller {
 	}
 
 	private function loadAction($action) {
-		$templateFile = strtolower($action);
 		if (method_exists($this, $action)) {
 			$this->$action();
-			if (!(defined('_TEMPLATE_MANAGER') && _TEMPLATE_MANAGER == View::ENGINE_JSONVIEW) && !$this->view->templateExists($templateFile)) {
-				throw new Exception('No Template found to this Method: ' . $templateFile);
-			}
-			$this->view->mergeTemplate($templateFile);
-		} elseif ($this->view->templateExists($templateFile)) {
-			$this->view->mergeTemplate($templateFile);
+			throw new Exception('No call for rest printRest: ' . $action);
 		} else {
-			$this->indexTemplate();
+			throw new Exception('Endpoint no found: ' . $action);
 		}
 	}
 
-	public static function getControlByRequest($modRequest) {
+	private function getControlByRequest($modRequest) {
 		$prefix = '';
 		if (defined('_CONTROLLER_PREFIX')) {
 			$prefix = _CONTROLLER_PREFIX;
@@ -324,7 +291,7 @@ class Controller {
 			throw new Exception('Modulo não informado');
 		}
 		if (class_exists($className)) {
-			return new $className();
+			return new $className($this->request, $this->response);
 		}
 		return null;
 	}
@@ -362,7 +329,6 @@ class Controller {
 		$control = $this->getModuleByRequest($mod);
 
 		if ($control != NULL && is_object($control)) {
-			$this->call($control);
 			$control->listener();
 		}
 		$op = $this->getFormVars('op');
@@ -381,7 +347,7 @@ class Controller {
 		if (!is_array($actMod) && ($actMod) && class_exists($actMod)) {
 			return new $actMod($this->request, $this->response);
 		}
-		return self::getControlByRequest($mod);
+		return $this->getControlByRequest($mod);
 	}
 
 	protected function reloadRequest() {
@@ -389,61 +355,6 @@ class Controller {
 			$_REQUEST = array_merge($_SESSION[_SYSNAME]['request'], $_REQUEST);
 			$_SESSION[_SYSNAME]['request'] = array();
 		}
-	}
-
-	public function call($obj) {
-		$r = new ReflectionObject($obj);
-		$methods = $r->getMethods();
-		$script = "";
-		foreach ($methods as $key => $value) {
-			$methodName = $value->getName();
-			try {
-				$p = $r->getMethod($methodName);
-				$dc = $p->getDocComment();
-				if (preg_match("#@RegisterAjax\s#", $dc, $a)) {
-					$moduleName = $this->getLabel("module");
-					$moduleValue = $this->getFormVars($moduleName);
-					$opName = $this->getLabel("op");
-					if ($script == "")
-						$script = '<script type="text/javascript">';
-					$ajaxPrefix = 'ajax';
-					if (defined('_AJAX_FUNCTION_PREFIX')) {
-						$ajaxPrefix = _AJAX_FUNCTION_PREFIX;
-					}
-					if ($ajaxPrefix != '') {
-						$functionName = $ajaxPrefix . '_' . $methodName;
-					} else {
-						$functionName = $methodName;
-					}
-					$script .= "\nfunction $functionName(){\n";
-					$script .= "\tvar arguments = $functionName.arguments;
-							var paramsString = '';
-							var data = {
-							    $moduleName:'{$moduleValue}',
-							    $opName:'{$methodName}'
-							    };\n;
-                            for (var i = 0; i < arguments.length; i++){
-                                var campo = 'param'+i;
-                                data[campo] = arguments[i];
-							}\n";
-					$script .= "\t if(!$('#stormAjax') || $('#stormAjax').length == 0) { return;} \n";
-					$script .= "document.getElementById('ajax_loading').style.display='inline';\n ";
-					$script .= "$('#stormAjax').load('?$moduleName={$moduleValue}&$opName=$methodName', data, function(response, status, xhr) {
-								if (response.includes('<body')) {
-								    document.write(response);\n
-								    return;
-								}
-								document.getElementById('ajax_loading').style.display='none';\n
-							});\n";
-					$script .= "}\n";
-				}
-			} catch (Exception $e) {
-				Debug::tail($e);
-			}
-		}
-		if ($script != "")
-			$script .= '</script>';
-		$this->view->addDefault("scriptAjax", $script);
 	}
 
 	public function __get($field) {

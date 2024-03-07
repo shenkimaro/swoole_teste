@@ -18,5 +18,5 @@ function processaURL(Request $requisicao, Response $resposta) {
     $_REQUEST['modulo'] = $parts[0];
     $_REQUEST['id'] = $parts[1];
     $_REQUEST['acao'] = $parts[2] ?? '';
-	(new library\ueg\Controller($requisicao, $resposta))->start();
+	(new \Controller($requisicao, $resposta))->start();
 }
