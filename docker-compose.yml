@@ -7,19 +7,51 @@ networks:
 
 services:
 
-#  app01: &app
-#    image: phpswoole/swoole:5.0
-#    hostname: app01
-#    ports:
-#      - 9595:9501
-#    volumes:
-#      - type: bind
-#        source: .
-#        target: /var/www/
+  app01: &app
+    image: phpswoole/swoole:5.0
+    hostname: app01
+    networks:
+      rede_app:
+        aliases:
+          - app01
+    environment:
+      - DB_HOSTNAME=db
+      - PORT=9000
+    depends_on:
+      - db
+    volumes:
+      - type: bind
+        source: .
+        target: /var/www/
+    deploy:
+     resources:
+       limits:
+         cpus: '0.3'
+         memory: '175MB'  
 
-#  app02:
-#    <<: *app
-#    hostname: app02     
+  app02:
+    <<: *app
+    hostname: app02    
+
+  nginx:
+    image: nginx
+    restart: always
+    networks:
+      - rede_app
+    ports:
+      - 9999:80 
+    depends_on:
+      - app01
+      - app02  
+    deploy:
+     resources:
+       limits:
+         cpus: "0.4"
+         memory: "40MB"  
+    volumes:
+      - type: bind
+        source: ./container/nginx/nginx.conf
+        target: /etc/nginx/nginx.conf     
 
   db:
     image: postgres

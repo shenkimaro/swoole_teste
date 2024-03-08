@@ -106,7 +106,7 @@ class Restful {
 			$this->returnHeadersWhenOptionsMethod();
 		}
 		$this->response->header('Access-Control-Allow-Methods', '*');
-		$this->response->header("HTTP/1.1 " . $status . " " . $this->requestStatus($status), '');
+		$this->response->status($status);
 
 		if ($this->tipo_saida == 'json') {
 			$this->response->header('Content-Type', "application/{$this->tipo_saida}");

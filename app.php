@@ -1,7 +1,7 @@
 
 <?php
 
-$http = new Swoole\Http\Server('0.0.0.0', 9999);
+$http = new Swoole\Http\Server('0.0.0.0', 9000);
 include './config/requires.php';
 include './load.php';
 
