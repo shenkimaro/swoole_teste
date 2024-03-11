@@ -76,4 +76,5 @@ services:
     volumes: 
       - rinha:/var/lib/postgresql/datas
       - ./container/script.sql:/docker-entrypoint-initdb.d/init.sql
+#      - ./container/postgres/postgresql.conf:/usr/share/postgresql/16/postgresql.conf
     command: postgres -c checkpoint_timeout=600 -c max_wal_size=4096 -c synchronous_commit=0 -c full_page_writes=0 
