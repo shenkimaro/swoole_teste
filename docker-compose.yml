@@ -4,11 +4,14 @@ version: '3.1'
 networks:
   rede_app:    
     driver: bridge
+    
+volumes:
+  rinha:    
 
 services:
 
   app01: &app
-    image: phpswoole/swoole:5.0
+    image: swoole/postgres
     hostname: app01
     networks:
       rede_app:
@@ -27,7 +30,7 @@ services:
      resources:
        limits:
          cpus: '0.3'
-         memory: '175MB'  
+         memory: '75MB'  
 
   app02:
     <<: *app
@@ -64,15 +67,13 @@ services:
     environment:
       POSTGRES_PASSWORD: teste
     ports:
-      - 5432:5432  
+      - 5433:5432  
     deploy:
       resources:
         limits:
           cpus: "0.5"
-          memory: "160MB"  
+          memory: "360MB"  
     volumes: 
       - rinha:/var/lib/postgresql/datas
       - ./container/script.sql:/docker-entrypoint-initdb.d/init.sql
     command: postgres -c checkpoint_timeout=600 -c max_wal_size=4096 -c synchronous_commit=0 -c full_page_writes=0 
-volumes:
-  rinha:
