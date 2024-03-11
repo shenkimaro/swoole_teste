@@ -11,7 +11,7 @@ volumes:
 services:
 
   app01: &app
-    image: swoole/postgres
+    image: shenkimaro/swoole-postgres
     hostname: app01
     networks:
       rede_app:
