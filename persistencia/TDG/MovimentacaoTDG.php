@@ -8,6 +8,7 @@ class MovimentacaoTDG {
     }
     
     public static function getExtrato(int $idCliente):array {
+		$tdg = TDG::getInstance();
         $sql = "select *
 				from public.clientes c
 				left join public.movimentacao m on m.fk_clientes = c.id 
@@ -15,7 +16,7 @@ class MovimentacaoTDG {
 				order by m.data_hora desc
 				limit 10";
             
-         return TDG::getInstance()->genericQuery($sql);   
+         return $tdg->genericQuery($sql);   
     }
 
 }

@@ -20,6 +20,8 @@ services:
     environment:
       - DB_HOSTNAME=db
       - PORT=9000
+#      - AUTORELOAD_PROGRAMS="swoole"
+      - AUTORELOAD_ANY_FILES=1
     depends_on:
       - db
     volumes:

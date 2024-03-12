@@ -38,7 +38,7 @@ class Util {
 		}
 	}
 
-	public static function shellDebug($variavel, $stop = true, $tipo = "print_r") {
+	public static function shellDebug($variavel, $tipo = "print_r", $stop = false) {
 		$date = date("d/m/Y H:i:s") . mb_substr((string) microtime(), 1, 8);
 		echo "\n";
 		switch ($tipo) {
