@@ -122,16 +122,9 @@ class DbPg {
 	}
 
 	public function __destruct() {
-		if ($this->con && is_resource($this->con)) {
+		if ($this->con instanceof \PgSql\Connection) {
 			if (!pg_close($this->con)) {
 				Debug::tail('Nao foi possivel fechar a conexao.');
-			}
-
-			if (defined("_SYSNAME") && _SYSNAME == 'cms_template') {
-				$tempoDecorrido = Debug::getElapsedExecutionTime($this->startTimeConnection);
-				if ($tempoDecorrido >= 10) {
-					trigger_error("Tempo demorado de conexao aberta: $tempoDecorrido", E_USER_WARNING);
-				}
 			}
 		}
 	}
