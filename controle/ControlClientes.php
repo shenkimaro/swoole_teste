@@ -19,7 +19,6 @@ class ControlClientes extends Controller {
     public function transacoes() {
         try {
 			$json = $this->request->rawcontent();
-			
 			$request = json_decode($json);
             $valor = (int) $request->valor;
 			$tipo = strtolower($request->tipo);
