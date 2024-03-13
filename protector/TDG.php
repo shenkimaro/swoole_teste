@@ -63,6 +63,12 @@ class TDG {
 		}
 	}
 
+	public function __destruct() {
+		if (isset($this->db)) {
+			unset($this->db);
+		}
+	}
+
 	/**
 	 *
 	 * @return TDG

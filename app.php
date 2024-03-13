@@ -9,8 +9,8 @@ $http->on('start', function ($server) {
 	Util::shellDebug([
 		'IP' => $server->host, 
 		'Port' => $server->port
-		],false);
-    echo "Servidor Iniciado \n";
+		]);
+	echo "Servidor Iniciado \n";
 });
 
 $http->on('request', function ($request, $response) {

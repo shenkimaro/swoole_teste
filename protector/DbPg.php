@@ -123,8 +123,8 @@ class DbPg {
 
 	public function __destruct() {
 		if ($this->con instanceof \PgSql\Connection) {
-			if (!pg_close($this->con)) {
-				Debug::tail('Nao foi possivel fechar a conexao.');
+			if (pg_close($this->con)) {
+				$this->con = null;
 			}
 		}
 	}
@@ -187,10 +187,10 @@ class DbPg {
 		$mensagem_erro = "Não foi possível fazer a conexão com o banco de dados";
 		$connectParans = "host=$this->host dbname=$this->db user=$this->login password=$this->senha port=$this->port connect_timeout=1";
 
-		$this->con = @pg_connect($connectParans);
-
+		$this->con = pg_connect($connectParans, PGSQL_CONNECT_FORCE_NEW);
+		Util::shellDebug($this->con);
 		if ($this->con) {
-			$this->error = @pg_last_error($this->con);
+			$this->error = pg_last_error($this->con);
 			if ($this->error) {
 				throw new ConectionDBException($mensagem_erro . $this->error);
 			}

@@ -19,7 +19,7 @@ class ClientesTDG {
                 break;
         }
         $tdg = TDG::getInstance();
-        $tdg->beginTransaction();
+		$tdg->beginTransaction();
 		$valor = $cliente->getSaldo();
         $sql = "update clientes set saldo = saldo $acao {$valor} "
                 . "where id = {$cliente->getId()} returning *;";
@@ -35,11 +35,14 @@ class ClientesTDG {
         $movimentacao->setFkClientes($cliente->getId());
         $movimentacao->setDescricao($descricao);
         $movDb = MovimentacaoTDG::inserir($movimentacao);
-		if($movDb == null){
+		if ($movDb == null) {
+			$tdg->rollback();
+			$tdg = null;
 			throw new Exception('Não foi possível inserir a movimentação do extrato');
 		}
         $tdg->commit();
-        return $cliente;
+		$tdg = null;
+		return $cliente;
     }
 
 }
