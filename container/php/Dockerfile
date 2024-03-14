@@ -1,5 +1,5 @@
 
-FROM phpswoole/swoole:5.0
+FROM phpswoole/swoole
 
 RUN apt-get update && \
     apt-get install -y libpq-dev && \

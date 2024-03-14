@@ -188,7 +188,6 @@ class DbPg {
 		$connectParans = "host=$this->host dbname=$this->db user=$this->login password=$this->senha port=$this->port connect_timeout=1";
 
 		$this->con = pg_connect($connectParans, PGSQL_CONNECT_FORCE_NEW);
-		Util::shellDebug($this->con);
 		if ($this->con) {
 			$this->error = pg_last_error($this->con);
 			if ($this->error) {

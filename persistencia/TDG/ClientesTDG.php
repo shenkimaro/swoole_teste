@@ -41,7 +41,7 @@ class ClientesTDG {
 			throw new Exception('Não foi possível inserir a movimentação do extrato');
 		}
         $tdg->commit();
-		$tdg = null;
+//		TDG::destroyInstance();
 		return $cliente;
     }
 

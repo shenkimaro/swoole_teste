@@ -11,15 +11,17 @@ volumes:
 services:
 
   app01: &app
-    image: shenkimaro/swoole-postgres
+    container_name: php-swoole-latest
+    build: 
+      context: ./container/php/
     hostname: app01
     networks:
       rede_app:
         aliases:
           - app01
-#    environment:
-#      AUTORELOAD_PROGRAMS: "swoole"
-#      AUTORELOAD_ANY_FILES: 1
+    environment:
+      AUTORELOAD_PROGRAMS: "swoole"
+      AUTORELOAD_ANY_FILES: 1
     depends_on:
       - db
     volumes:
@@ -29,12 +31,12 @@ services:
     deploy:
      resources:
        limits:
-         cpus: '0.3'
-         memory: '75MB'  
+         cpus: '0.6'
+         memory: '150MB'  
 
-  app02:
-    <<: *app
-    hostname: app02    
+#  app02:
+#    <<: *app
+#    hostname: app02    
 
   nginx:
     image: nginx
@@ -53,7 +55,7 @@ services:
          memory: "40MB"  
     volumes:
       - type: bind
-        source: ./container/nginx/nginx.conf
+        source: ./container/nginx/nginx-dev.conf
         target: /etc/nginx/nginx.conf     
 
   db:

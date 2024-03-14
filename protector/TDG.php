@@ -74,10 +74,18 @@ class TDG {
 	 * @return TDG
 	 */
 	public static function getInstance() {
-		if (!isset(self::$instance)) {
+		if (!isset(self::$instance) || self::$instance == null) {
 			self::$instance = new TDG();
 		}
 		return self::$instance;
+	}
+	
+	/**
+	 *
+	 * @return TDG
+	 */
+	public static function destroyInstance() {
+		self::$instance = null;
 	}
 
 	private function getLogInstance($array) {
@@ -175,13 +183,7 @@ class TDG {
 			$array['port'] = $array['_port'] ?? '';
 		}
 		$dbName = isset($array['sgbd']) ? $array['sgbd'] : 'DbPg';
-		$container = new Container();
-		$name = md5($dbName . $array['host'] . $array['bd'] . $array['login'] . $array['password'] . ($array['port'] ?? ''));
-		if ($container->exists($name)) {
-			return $container->getObj($name)[0];
-		}
 		$dbReturn = new $dbName($array['host'], $array['bd'], $array['login'], $array['password'], $array['port'] ?? '');
-		$container->insert($dbReturn, $name);
 		return $dbReturn;
 	}
 
